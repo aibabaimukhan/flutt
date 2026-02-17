@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter & PHP API: Полное руководство</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
+        
+        /* Стили для вкладок */
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        .tab-button {
+            padding: 15px 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.3s;
+            border-bottom: 4px solid transparent;
+        }
+        .tab-button:hover { background-color: #e9ecef; }
+        .tab-button.active { color: #02569B; border-bottom: 4px solid #02569B; }
+        
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Общие стили для контента */
+        header { background: #02569B; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #02569B; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-top: 40px; }
+        h3 { color: #0175C2; margin-top: 25px; }
+        .section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        
+        /* Стили кода и тегов */
+        /* Inline code (в тексте) */
+        code { background: #f1f1f1; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; color: #d63384; font-size: 0.95em; }
+        
+        /* Block code (в превью) - ТЕМНЫЙ ФОН */
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.5; margin: 0; tab-size: 4; }
+        
+        /* Убираем фон у code внутри pre, чтобы не было белых линий */
+        pre code { background: transparent; padding: 0; border-radius: 0; color: inherit; }
+        
+        .tag { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .tag-flutter { background: #02569B; color: white; }
+        .tag-php { background: #777BB4; color: white; }
+        .tag-dart { background-color: #0175C2; color: white; }
+        
+        .alert { padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid; }
+        .alert-warning { background: #fff3e0; border-left-color: #ff9800; color: #e65100; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        /* Стили для файлов во второй вкладке */
+        .file-container { background: white; border-radius: 10px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; }
+        .file-header { background: #e9ecef; padding: 12px 20px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; }
+        .filename { font-family: 'Consolas', monospace; font-weight: bold; color: #495057; }
+
+        /* Подсветка синтаксиса (цвета как в VS Code Dark) */
+        .keyword { color: #c678dd; } 
+        .type { color: #e5c07b; }
+        .string { color: #98c379; }
+        .comment { color: #7f848e; font-style: italic; }
+        .function { color: #61afef; }
+        .number { color: #d19a66; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Сетевые запросы и работа с API</h1>
+    <p>Интеграция Flutter-приложений с PHP-сервером</p>
+</header>
+
+<div class="tabs">
+    <button class="tab-button active" onclick="openTab(event, 'tab1')">📚 Теория и примеры</button>
+    <button class="tab-button" onclick="openTab(event, 'tab2')">💻 Исходный код проекта</button>
+</div>
+
+<div id="tab1" class="tab-content active">
+    <div class="section">
+        <h2>1. Введение и настройка</h2>
+        <p>HTTP-запросы позволяют приложениям обмениваться данными между клиентом (Flutter) и сервером (PHP). Для работы во Flutter чаще всего используются библиотеки <code>http</code> и <code>dio</code>.</p>
+        
+        <h3>Установка зависимостей (pubspec.yaml)</h3>
+        <p>Добавьте необходимые пакеты в проект:</p>
+        <pre>
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.13.6 <span class="comment"># или ^0.14.0 для новых версий</span>
+  dio: ^5.0.0 <span class="comment"># альтернативный мощный клиент</span></pre>
+        <p>Затем выполните команду: <code>flutter pub get</code>.</p>
+    </div>
+
+    <div class="section">
+        <span class="tag tag-flutter">Flutter (Dart)</span>
+        <h2>2. Выполнение HTTP-запросов</h2>
+        
+        <h3>2.1. GET-запрос (Получение данных)</h3>
+        <p>Запрос типа <code>GET</code> используется для получения информации с сервера.</p>
+        <pre>
+<span class="keyword">import</span> <span class="string">'package:http/http.dart'</span> <span class="keyword">as</span> http;
+<span class="keyword">import</span> <span class="string">'dart:convert'</span>;
+
+<span class="type">Future</span>&lt;<span class="keyword">void</span>&gt; <span class="function">fetchUsers</span>() <span class="keyword">async</span> {
+  <span class="keyword">final</span> url = <span class="type">Uri</span>.parse(<span class="string">"https://jsonplaceholder.typicode.com/users"</span>);
+  <span class="keyword">final</span> response = <span class="keyword">await</span> http.get(url);
+  
+  <span class="keyword">if</span> (response.statusCode == <span class="number">200</span>) {
+    <span class="type">List</span>&lt;<span class="keyword">dynamic</span>&gt; users = jsonDecode(response.body);
+    print(users);
+  } <span class="keyword">else</span> {
+    print(<span class="string">"Ошибка: ${response.statusCode}"</span>);
+  }
+}</pre>
+
+        <h3>2.2. POST-запрос (Отправка данных)</h3>
+        <p>Для отправки данных на PHP-сервер используется метод <code>POST</code>. Данные передаются в теле (body) запроса.</p>
+        <pre>
+<span class="type">Future</span>&lt;<span class="keyword">void</span>&gt; <span class="function">sendIdToPhp</span>(<span class="type">String</span> id) <span class="keyword">async</span> {
+  <span class="keyword">final</span> url = <span class="type">Uri</span>.parse(<span class="string">'https://example.com/api.php'</span>);
+  <span class="keyword">final</span> data = {<span class="string">'id'</span>: id};
+  
+  <span class="keyword">try</span> {
+    <span class="keyword">final</span> response = <span class="keyword">await</span> http.post(url, body: data);
+    <span class="keyword">if</span> (response.statusCode == <span class="number">200</span>) {
+      print(<span class="string">'Данные отправлены успешно: ${response.body}'</span>);
+    }
+  } <span class="keyword">catch</span> (e) {
+    print(<span class="string">'Ошибка: $e'</span>);
+  }
+}</pre>
+
+        <h3>2.3. PUT и DELETE</h3>
+        <ul>
+            <li><strong>PUT:</strong> Обновление существующих данных по ID.</li>
+            <li><strong>DELETE:</strong> Удаление ресурса с сервера.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <span class="tag tag-php">PHP (Server-side)</span>
+        <h2>3. Обработка на стороне сервера</h2>
+        
+        <h3>3.1. Получение данных через $_POST</h3>
+        <p>На сервере PHP данные извлекаются из глобального массива <code>$_POST</code>.</p>
+        <pre>
+<span class="keyword">&lt;?php</span>
+<span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="type">$_POST</span>[<span class="string">'id'</span>])) {
+    <span class="type">$id</span> = <span class="type">$_POST</span>[<span class="string">'id'</span>];
+    <span class="keyword">echo</span> <span class="string">"Получен ID: "</span> . <span class="type">$id</span>;
+} <span class="keyword">else</span> {
+    <span class="keyword">echo</span> <span class="string">"ID не передан!"</span>;
+}
+<span class="keyword">?&gt;</span></pre>
+
+        <h3>3.2. Ответ в формате JSON</h3>
+        <p>Чтобы Flutter мог прочитать ответ, сервер должен закодировать данные в JSON.</p>
+        <pre>
+<span class="keyword">&lt;?php</span>
+<span class="type">$response</span> = <span class="keyword">array</span>(<span class="string">"status"</span> => <span class="string">"success"</span>, <span class="string">"message"</span> => <span class="string">"Данные получены."</span>);
+<span class="keyword">echo</span> json_encode(<span class="type">$response</span>);
+<span class="keyword">?;gt;</span></pre>
+    </div>
+
+    <div class="section">
+        <h2>4. Работа с библиотекой Dio</h2>
+        <p><code>Dio</code> поддерживает перехватчики, таймауты и автоматическое преобразование JSON.</p>
+        <pre>
+<span class="keyword">import</span> <span class="string">'package:dio/dio.dart'</span>;
+
+<span class="keyword">final</span> dio = Dio();
+<span class="type">Future</span>&lt;<span class="keyword">void</span>&gt; <span class="function">fetchWithDio</span>() <span class="keyword">async</span> {
+  <span class="keyword">try</span> {
+    <span class="keyword">final</span> response = <span class="keyword">await</span> dio.get(<span class="string">"https://jsonplaceholder.typicode.com/users"</span>);
+    print(response.data);
+  } <span class="keyword">catch</span> (e) {
+    print(<span class="string">"Ошибка запроса: $e"</span>);
+  }
+}</pre>
+    </div>
+
+    <div class="section">
+        <h2>5. Безопасность и Рекомендации</h2>
+        <div class="alert alert-warning">
+            <strong>Важно:</strong> Всегда используйте <strong>HTTPS</strong> для защиты передаваемых данных.
+        </div>
+        <ul>
+            <li><strong>Защита от SQL-инъекций:</strong> Обязательно используйте <strong>подготовленные выражения</strong> (prepared statements) в PHP.</li>
+            <li><strong>Обработка ошибок:</strong> Используйте конструкцию <code>try-catch</code> для предотвращения вылета приложения при сбоях сети.</li>
+            <li><strong>Модульность:</strong> Выносите логику запросов в отдельные классы-сервисы.</li>
+            <li><strong>Кеширование:</strong> Сохраняйте данные локально, чтобы уменьшить нагрузку на сервер.</li>
+        </ul>
+    </div>
+</div>
+
+<div id="tab2" class="tab-content">
+    
+    <h2 style="color: #777BB4; border-bottom: 2px solid #777BB4;">Backend (PHP)</h2>
+
+    <div class="file-container">
+        <div class="file-header">
+            <span class="filename">db.php</span>
+            <span class="tag tag-php">PHP</span>
+        </div>
+        <pre><code><span class="keyword">&lt;?php</span>
+<span class="type">$host</span> = <span class="string">"localhost"</span>;  <span class="comment">// Сервер базы данных</span>
+<span class="type">$user</span> = <span class="string">"root"</span>;       <span class="comment">// Логин БД (по умолчанию root)</span>
+<span class="type">$pass</span> = <span class="string">"root"</span>;           <span class="comment">// Пароль БД (по умолчанию пусто)</span>
+<span class="type">$dbname</span> = <span class="string">"flutter"</span>;  <span class="comment">// Имя базы данных</span>
+
+<span class="type">$conn</span> = <span class="keyword">new</span> mysqli(<span class="type">$host</span>, <span class="type">$user</span>, <span class="type">$pass</span>, <span class="type">$dbname</span>);
+
+<span class="keyword">if</span> (<span class="type">$conn</span>->connect_error) {
+    <span class="keyword">die</span>(json_encode([<span class="string">"status"</span> => <span class="string">"error"</span>, <span class="string">"message"</span> => <span class="string">"Ошибка подключения: "</span> . <span class="type">$conn</span>->connect_error]));
+}
+<span class="keyword">?&gt;</span></code></pre>
+    </div>
+
+    <div class="file-container">
+        <div class="file-header">
+            <span class="filename">get_user.php</span>
+            <span class="tag tag-php">PHP</span>
+        </div>
+        <pre><code><span class="keyword">&lt;?php</span>
+header(<span class="string">"Access-Control-Allow-Origin: *"</span>);
+header(<span class="string">"Access-Control-Allow-Methods: GET, POST, OPTIONS"</span>);
+header(<span class="string">"Access-Control-Allow-Headers: Content-Type"</span>);
+header(<span class="string">"Content-Type: application/json"</span>);
+<span class="keyword">require</span> <span class="string">"db.php"</span>;  <span class="comment">// Подключаем БД</span>
+
+<span class="type">$sql</span> = <span class="string">"SELECT * FROM users"</span>;
+<span class="type">$result</span> = <span class="type">$conn</span>->query(<span class="type">$sql</span>);
+
+<span class="type">$users</span> = [];
+<span class="keyword">while</span> (<span class="type">$row</span> = <span class="type">$result</span>->fetch_assoc()) {
+    <span class="type">$users</span>[] = <span class="type">$row</span>;
+}
+
+<span class="keyword">echo</span> json_encode([<span class="string">"status"</span> => <span class="string">"success"</span>, <span class="string">"users"</span> => <span class="type">$users</span>]);
+<span class="keyword">?&gt;</span></code></pre>
+    </div>
+
+    <h2 style="color: #02569B; border-bottom: 2px solid #02569B; margin-top: 50px;">Frontend (Flutter/Dart)</h2>
+
+    <div class="file-container">
+        <div class="file-header">
+            <span class="filename">api_service.dart</span>
+            <span class="tag tag-dart">Dart</span>
+        </div>
+        <pre><code><span class="keyword">import</span> <span class="string">'dart:convert'</span>; <span class="comment">// Импорт библиотеки для работы с JSON</span>
+<span class="keyword">import</span> <span class="string">'package:http/http.dart'</span> <span class="keyword">as</span> http; <span class="comment">// Импорт пакета http для выполнения HTTP-запросов</span>
+
+<span class="keyword">class</span> <span class="type">ApiService</span> { <span class="comment">// Определение класса ApiService</span>
+  <span class="keyword">static const</span> <span class="type">String</span> baseUrl = <span class="string">"http://flutter"</span>; <span class="comment">// Определение базового URL для API</span>
+
+  <span class="comment">// Метод для получения списка пользователей</span>
+  <span class="keyword">static</span> <span class="type">Future</span>&lt;<span class="type">List</span>&lt;<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="keyword">dynamic</span>&gt;&gt;&gt; <span class="function">fetchUsers</span>() <span class="keyword">async</span> { <span class="comment">// Определение асинхронного метода fetchUsers</span>
+    <span class="keyword">final</span> response = <span class="keyword">await</span> http.get(<span class="type">Uri</span>.parse(<span class="string">'$baseUrl/get_user.php'</span>)); <span class="comment">// Выполнение GET-запроса к API</span>
+
+    <span class="comment">// Проверка, что запрос выполнен успешно (статус код 200)</span>
+    <span class="keyword">if</span> (response.statusCode == <span class="number">200</span>) { 
+      <span class="comment">// Декодирование тела ответа из JSON в объект Dart</span>
+      <span class="keyword">final</span> data = json.decode(response.body); 
+
+      <span class="comment">// Проверка, что статус в ответе "success"</span>
+      <span class="keyword">if</span> (data[<span class="string">'status'</span>] == <span class="string">'success'</span>) { 
+        <span class="comment">// Преобразование списка пользователей из JSON в список Map в Dart</span>
+        <span class="keyword">return</span> <span class="type">List</span>&lt;<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="keyword">dynamic</span>&gt;&gt;.from(data[<span class="string">'users'</span>]); 
+      } <span class="keyword">else</span> { 
+        <span class="comment">// Если статус не "success", выбрасывается исключение с сообщением об ошибке</span>
+        <span class="keyword">throw</span> <span class="type">Exception</span>(<span class="string">"Ошибка: ${data['message']}"</span>); 
+      }
+    } <span class="keyword">else</span> { 
+      <span class="comment">// Если статус код не 200, выбрасывается исключение с кодом ошибки</span>
+      <span class="keyword">throw</span> <span class="type">Exception</span>(<span class="string">"Ошибка соединения: ${response.statusCode}"</span>); 
+    }
+  }
+}</code></pre>
+    </div>
+
+    <div class="file-container">
+        <div class="file-header">
+            <span class="filename">main.dart</span>
+            <span class="tag tag-dart">Dart</span>
+        </div>
+        <pre><code><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>; <span class="comment">// Импорт основных виджетов Flutter</span>
+<span class="keyword">import</span> <span class="string">'api_service.dart'</span>; <span class="comment">// Импорт вашего сервиса для получения данных</span>
+
+<span class="keyword">void</span> <span class="function">main</span>() {
+  runApp(<span class="type">MyApp</span>()); <span class="comment">// Запуск приложения с корневым виджетом MyApp</span>
+}
+
+<span class="keyword">class</span> <span class="type">MyApp</span> <span class="keyword">extends</span> <span class="type">StatelessWidget</span> { <span class="comment">// Определение корневого виджета приложения</span>
+  <span class="keyword">@override</span>
+  <span class="type">Widget</span> <span class="function">build</span>(<span class="type">BuildContext</span> context) { <span class="comment">// Метод для построения виджета</span>
+    <span class="keyword">return</span> <span class="type">MaterialApp</span>( <span class="comment">// Возвращает MaterialApp, который является основным виджетом для приложения</span>
+      debugShowCheckedModeBanner: <span class="keyword">false</span>, <span class="comment">// Отключает баннер отладки в верхнем правом углу</span>
+      home: <span class="type">UserGridScreen</span>(), <span class="comment">// Устанавливает UserGridScreen как главный экран приложения</span>
+    );
+  }
+}
+
+<span class="keyword">class</span> <span class="type">UserGridScreen</span> <span class="keyword">extends</span> <span class="type">StatefulWidget</span> { <span class="comment">// Новый класс для отображения в GridView</span>
+  <span class="keyword">@override</span>
+  <span class="type">_UserGridScreenState</span> <span class="function">createState</span>() => <span class="type">_UserGridScreenState</span>(); <span class="comment">// Создание состояния для виджета</span>
+}
+
+<span class="keyword">class</span> <span class="type">_UserGridScreenState</span> <span class="keyword">extends</span> <span class="type">State</span>&lt;<span class="type">UserGridScreen</span>&gt; { <span class="comment">// Определение состояния для UserGridScreen</span>
+  <span class="keyword">late</span> <span class="type">Future</span>&lt;<span class="type">List</span>&lt;<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="keyword">dynamic</span>&gt;&gt;&gt; users; <span class="comment">// Объявление переменной users как Future, который будет содержать список пользователей</span>
+
+  <span class="keyword">@override</span>
+  <span class="keyword">void</span> <span class="function">initState</span>() { <span class="comment">// Метод, который вызывается при инициализации состояния</span>
+    <span class="keyword">super</span>.initState(); <span class="comment">// Вызов метода initState у базового класса</span>
+    users = <span class="type">ApiService</span>.fetchUsers(); <span class="comment">// Инициализация users с результатом вызова метода fetchUsers из ApiService</span>
+  }
+
+  <span class="keyword">@override</span>
+  <span class="type">Widget</span> <span class="function">build</span>(<span class="type">BuildContext</span> context) { <span class="comment">// Метод для построения виджета</span>
+    <span class="keyword">return</span> <span class="type">Scaffold</span>( <span class="comment">// Возвращает Scaffold, который предоставляет базовую структуру визуального интерфейса</span>
+      appBar: <span class="type">AppBar</span>( <span class="comment">// Определение AppBar в верхней части экрана</span>
+        title: <span class="type">Text</span>(<span class="string">"Пользователи в GridView"</span>), <span class="comment">// Установка заголовка AppBar</span>
+      ),
+      body: <span class="type">FutureBuilder</span>&lt;<span class="type">List</span>&lt;<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="keyword">dynamic</span>&gt;&gt;&gt;( <span class="comment">// Использование FutureBuilder для обработки асинхронных данных</span>
+        future: users, <span class="comment">// Установка future для FutureBuilder</span>
+        builder: (context, snapshot) { <span class="comment">// Метод builder, который определяет, что отображать в зависимости от состояния Future</span>
+          <span class="keyword">if</span> (snapshot.connectionState == <span class="type">ConnectionState</span>.waiting) { <span class="comment">// Если данные еще загружаются</span>
+            <span class="keyword">return</span> <span class="type">Center</span>(child: <span class="type">CircularProgressIndicator</span>()); <span class="comment">// Отображает индикатор загрузки в центре экрана</span>
+          } <span class="keyword">else if</span> (snapshot.hasError) { <span class="comment">// Если произошла ошибка</span>
+            <span class="keyword">return</span> <span class="type">Center</span>(child: <span class="type">Text</span>(<span class="string">"Ошибка: ${snapshot.error}"</span>)); <span class="comment">// Отображает сообщение об ошибке</span>
+          } <span class="keyword">else if</span> (!snapshot.hasData || snapshot.data!.isEmpty) { <span class="comment">// Если данных нет или они пустые</span>
+            <span class="keyword">return</span> <span class="type">Center</span>(child: <span class="type">Text</span>(<span class="string">"Нет пользователей"</span>)); <span class="comment">// Отображает сообщение об отсутствии данных</span>
+          }
+
+          <span class="keyword">final</span> users = snapshot.data!; <span class="comment">// Получение данных из snapshot</span>
+          <span class="keyword">return</span> <span class="type">GridView.builder</span>( <span class="comment">// Возвращает GridView.builder для отображения данных в виде сетки</span>
+            padding: <span class="type">EdgeInsets</span>.all(<span class="number">10</span>), <span class="comment">// Устанавливает отступы для сетки</span>
+            gridDelegate: <span class="type">SliverGridDelegateWithFixedCrossAxisCount</span>( <span class="comment">// Определяет количество столбцов и расстояние между ними</span>
+              crossAxisCount: <span class="number">2</span>, <span class="comment">// Количество столбцов</span>
+              crossAxisSpacing: <span class="number">10</span>, <span class="comment">// Расстояние между столбцами</span>
+              mainAxisSpacing: <span class="number">10</span>, <span class="comment">// Расстояние между строками</span>
+            ),
+            itemCount: users.length, <span class="comment">// Количество элементов в сетке</span>
+            itemBuilder: (context, index) { <span class="comment">// Метод для построения каждого элемента сетки</span>
+              <span class="keyword">final</span> user = users[index]; <span class="comment">// Получение текущего пользователя</span>
+              <span class="keyword">return</span> <span class="type">GestureDetector</span>( <span class="comment">// Использование GestureDetector для обработки нажатий</span>
+                onTap: () { <span class="comment">// Обработчик нажатия на элемент</span>
+                  <span class="comment">// Здесь можно добавить логику для обработки нажатий на пользователя</span>
+                  print(<span class="string">'Нажат пользователь: ${user['name']}'</span>);
+                },
+                child: <span class="type">Card</span>( <span class="comment">// Использование Card для отображения информации о пользователе</span>
+                  child: <span class="type">Column</span>( <span class="comment">// Использование Column для размещения элементов вертикально</span>
+                    mainAxisAlignment: <span class="type">MainAxisAlignment</span>.center, <span class="comment">// Центрирование элементов по вертикали</span>
+                    children: [ <span class="comment">// Список элементов для отображения</span>
+                      <span class="type">CircleAvatar</span>( <span class="comment">// Использование CircleAvatar для отображения инициала пользователя</span>
+                        radius: <span class="number">30</span>, <span class="comment">// Радиус CircleAvatar</span>
+                        child: <span class="type">Text</span>( <span class="comment">// Текст внутри CircleAvatar</span>
+                          user[<span class="string">'name'</span>][<span class="number">0</span>].toUpperCase(), <span class="comment">// Первая буква имени пользователя в верхнем регистре</span>
+                          style: <span class="type">TextStyle</span>(fontSize: <span class="number">24</span>), <span class="comment">// Стиль текста</span>
+                        ),
+                      ),
+                      <span class="type">SizedBox</span>(height: <span class="number">10</span>), <span class="comment">// Промежуток между элементами</span>
+                      <span class="type">Text</span>( <span class="comment">// Отображение имени пользователя</span>
+                        user[<span class="string">'name'</span>], <span class="comment">// Имя пользователя</span>
+                        style: <span class="type">TextStyle</span>(fontSize: <span class="number">18</span>), <span class="comment">// Стиль текста</span>
+                      ),
+                      <span class="type">Text</span>( <span class="comment">// Отображение email пользователя</span>
+                        user[<span class="string">'email'</span>], <span class="comment">// Email пользователя</span>
+                        style: <span class="type">TextStyle</span>(color: <span class="type">Colors</span>.grey), <span class="comment">// Стиль текста с серым цветом</span>
+                      ),
+                      <span class="type">ElevatedButton</span>(
+                        onPressed: (){}, 
+                        child: <span class="type">Icon</span>(<span class="type">Icons</span>.delete),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: <span class="type">FloatingActionButton</span>( <span class="comment">// Добавление кнопки действия</span>
+        onPressed: () { <span class="comment">// Обработчик нажатия на кнопку</span>
+          showDialog( <span class="comment">// Отображение диалогового окна</span>
+            context: context, 
+            builder: (context) { <span class="comment">// Метод для построения диалогового окна</span>
+              <span class="keyword">return</span> <span class="type">AlertDialog</span>( <span class="comment">// Возвращает AlertDialog</span>
+                title: <span class="type">Text</span>(<span class="string">'Add context'</span>), <span class="comment">// Заголовок диалогового окна</span>
+                content: <span class="type">Column</span>(
+                  children: [
+                    <span class="type">TextField</span>( <span class="comment">// Поле для ввода текста</span>
+                      onChanged: (value) { <span class="comment">// Обработчик изменения текста</span>
+                        <span class="comment">// Здесь можно добавить логику для обработки ввода</span>
+                      },
+                    ),
+                    <span class="type">TextField</span>( <span class="comment">// Поле для ввода текста</span>
+                      onChanged: (value) { <span class="comment">// Обработчик изменения текста</span>
+                        <span class="comment">// Здесь можно добавить логику для обработки ввода</span>
+                      },
+                    ),
+                  ],
+                ),
+                actions: [ <span class="comment">// Список действий в диалоговом окне</span>
+                  <span class="type">ElevatedButton</span>( <span class="comment">// Кнопка для добавления данных</span>
+                    onPressed: () { <span class="comment">// Обработчик нажатия на кнопку</span>
+                      <span class="type">Navigator</span>.of(context).pop(); <span class="comment">// Закрытие диалогового окна</span>
+                    }, 
+                    child: <span class="type">Text</span>(<span class="string">'ADD'</span>), <span class="comment">// Текст на кнопке</span>
+                  ),
+                ],
+              );
+            }
+          );
+        }, 
+        child: <span class="type">Icon</span>(<span class="type">Icons</span>.add), <span class="comment">// Иконка на кнопке</span>
+      ),
+    );
+  }
+}</code></pre>
+    </div>
+
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        
+        // Скрыть все вкладки
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].className = tabcontent[i].className.replace(" active", "");
+            tabcontent[i].style.display = "none";
+        }
+
+        // Удалить класс active у всех кнопок
+        tablinks = document.getElementsByClassName("tab-button");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+        // Показать текущую вкладку и активировать кнопку
+        document.getElementById(tabName).style.display = "block";
+        document.getElementById(tabName).className += " active";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+</body>
+</html>
